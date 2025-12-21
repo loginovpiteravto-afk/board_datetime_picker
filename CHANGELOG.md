@@ -1,3 +1,7 @@
+## 2.8.5
+
+* Fixed the issue where items lag when minimumDate and maximumDate are too large.
+
 ## 2.8.4
 
 * Support for multi start and end date subtitle
