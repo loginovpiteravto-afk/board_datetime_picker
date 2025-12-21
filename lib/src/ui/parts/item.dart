@@ -342,10 +342,11 @@ class ItemWidgetState extends State<ItemWidget>
                               perspective: 0.01,
                               clipBehavior: Clip.antiAliasWithSaveLayer,
                               onSelectedItemChanged: onChange,
-                              childDelegate: ListWheelChildListDelegate(
-                                children: [
-                                  for (final i in map.keys) _item(i),
-                                ],
+                              childDelegate: ListWheelChildBuilderDelegate(
+                                builder: (BuildContext context, int index) {
+                                  return _item(index);
+                                },
+                                childCount: map.keys.length,
                               ),
                             ),
                           ),
@@ -726,10 +727,11 @@ class AmpmItemWidgetState extends State<AmpmItemWidget> {
                               perspective: 0.01,
                               clipBehavior: Clip.antiAliasWithSaveLayer,
                               onSelectedItemChanged: onChange,
-                              childDelegate: ListWheelChildListDelegate(
-                                children: [
-                                  for (final i in map.keys) _item(i),
-                                ],
+                              childDelegate: ListWheelChildBuilderDelegate(
+                                builder: (BuildContext context, int index) {
+                                  return _item(index);
+                                },
+                                childCount: map.keys.length,
                               ),
                             ),
                           ),

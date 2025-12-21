@@ -188,7 +188,7 @@ class BoardPickerItemOption {
   /// Max Length for TextField
   int get maxLength {
     if (type == DateType.year) {
-      return 4;
+      return max(minimumDate.year.toString().length, maximumDate.year.toString().length);
     } else if (type == DateType.month) {
       if (monthFormat == PickerMonthFormat.number) {
         return 2;
