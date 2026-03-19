@@ -1,12 +1,15 @@
 import 'dart:async';
 
-import 'package:board_datetime_picker/src/board_datetime_options.dart';
-import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
+import 'package:collection/collection.dart';
 import 'package:intl/intl.dart';
 
+import 'package:board_datetime_picker/src/board_datetime_options.dart';
+
 import '../board_datetime_picker.dart';
+
 import 'board_datetime_builder.dart';
 import 'ui/parts/focus_node.dart';
 import 'utils/board_input_filed_utilities.dart';
@@ -172,6 +175,7 @@ class BoardDateTimeInputField<T extends BoardDateTimeCommonResult>
     this.readOnly = false,
     this.enabled,
     this.onTopActionBuilder,
+    this.additionalInputFormatters,
   });
 
   /// #### Date of initial selection state.
@@ -225,6 +229,8 @@ class BoardDateTimeInputField<T extends BoardDateTimeCommonResult>
   final Widget Function(BuildContext context)? onTopActionBuilder;
 
   final double breakpoint;
+
+  final List<TextInputFormatter>? additionalInputFormatters;
 
   // ************************************************************************
   // *
@@ -364,8 +370,9 @@ class _BoardDateTimeInputFieldState<T extends BoardDateTimeCommonResult>
       // never tapped on the textfield, but text selected or modified
       final pf = FocusManager.instance.primaryFocus;
       final focusList = pf?.children ?? [];
-      final existsBdtFocusNode = focusList.any((x) =>
-          x is BoardDateTimeInputFocusNode || x is PickerContentsFocusNode);
+      final existsBdtFocusNode = focusList.any(
+        (x) => x is BoardDateTimeInputFocusNode || x is PickerContentsFocusNode,
+      );
       if (!scopeListenerRegistered) {
         closePicker();
         onFinished();
@@ -581,13 +588,12 @@ class _BoardDateTimeInputFieldState<T extends BoardDateTimeCommonResult>
         cursorHeight: widget.cursorHeight,
         cursorRadius: widget.cursorRadius,
         cursorColor: widget.cursorColor ?? options.activeColor,
-        decoration: widget.decoration ??
+        decoration:
+            widget.decoration ??
             InputDecoration(
               border: OutlineInputBorder(
                 borderRadius: borderRadius,
-                borderSide: const BorderSide(
-                  color: Colors.black,
-                ),
+                borderSide: const BorderSide(color: Colors.black),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: borderRadius,
@@ -597,9 +603,7 @@ class _BoardDateTimeInputFieldState<T extends BoardDateTimeCommonResult>
               ),
               errorBorder: OutlineInputBorder(
                 borderRadius: borderRadius,
-                borderSide: const BorderSide(
-                  color: Colors.redAccent,
-                ),
+                borderSide: const BorderSide(color: Colors.redAccent),
               ),
               errorMaxLines: 2,
               error: errorWidget,
@@ -612,7 +616,8 @@ class _BoardDateTimeInputFieldState<T extends BoardDateTimeCommonResult>
 
                 final error = validate(
                   value,
-                  complete: textController.text.length != textOffset ||
+                  complete:
+                      textController.text.length != textOffset ||
                       textOffset == format.length,
                 ).error;
 
@@ -639,9 +644,8 @@ class _BoardDateTimeInputFieldState<T extends BoardDateTimeCommonResult>
             : null,
         inputFormatters: [
           LengthLimitingTextInputFormatter(format.length),
-          FilteringTextInputFormatter.allow(
-            RegExp(r'[0-9/;:,\-\s\.]'),
-          )
+          FilteringTextInputFormatter.allow(RegExp(r'[0-9/;:,\-\s\.]')),
+          ...?additionalInputFormatters,
         ],
         onTap: () {
           FocusScope.of(context).addListener(_focusScopeListener);
@@ -673,26 +677,14 @@ class _BoardDateTimeInputFieldState<T extends BoardDateTimeCommonResult>
     for (var i = 0; i < value.length; i++) {
       // In the case of a delimiter, the previous value is stored.
       if (delititers.contains(value[i])) {
-        splited.add(
-          TextBloc(
-            text: text,
-            start: start,
-            end: i,
-          ),
-        );
+        splited.add(TextBloc(text: text, start: start, end: i));
         text = '';
       } else {
         if (text.isEmpty) start = i;
         text += value[i];
       }
     }
-    splited.add(
-      TextBloc(
-        text: text,
-        start: start,
-        end: value.length,
-      ),
-    );
+    splited.add(TextBloc(text: text, start: start, end: value.length));
 
     BoardDateTimeInputError? retError;
 
@@ -915,8 +907,9 @@ class _BoardDateTimeInputFieldState<T extends BoardDateTimeCommonResult>
           month.text.isNotEmpty &&
           day != null &&
           day.text.isNotEmpty) {
-        final year = result.splited!
-            .firstWhereOrNull((e) => e.dateType == DateType.year);
+        final year = result.splited!.firstWhereOrNull(
+          (e) => e.dateType == DateType.year,
+        );
 
         void setYear() {
           final bloc = TextBloc(
@@ -950,7 +943,8 @@ class _BoardDateTimeInputFieldState<T extends BoardDateTimeCommonResult>
     // Only time correction is performed since the date is corrected for the date
     if (complete && widget.pickerType == DateTimePickerType.datetime) {
       if (result.splited!.length <= 5) {
-        final diff = 5 -
+        final diff =
+            5 -
             (result.splited!.where((e) => e.text.isNotEmpty).toList().length);
         for (var i = 0; i < diff; i++) {
           TextBloc bloc;
@@ -1035,38 +1029,41 @@ class _BoardDateTimeInputFieldState<T extends BoardDateTimeCommonResult>
       FocusManager.instance.primaryFocus?.unfocus();
     }
 
-    return GestureDetector(onTapDown: (_) {
-      pickerFocusNode.requestFocus();
-    }, child: LayoutBuilder(
-      builder: (context, constraints) {
-        return Focus(
-          focusNode: pickerFocusNode,
-          child: SingleBoardDateTimeContent(
-            key: pickerController?.key,
-            pickerFocusNode: pickerFocusNode,
-            onChange: (val) {},
-            pickerType: widget.pickerType,
-            options: widget.options,
-            breakpoint: widget.breakpoint,
-            initialDate: selectedDate ?? DateTime.now(),
-            minimumDate: widget.minimumDate,
-            maximumDate: widget.maximumDate,
-            modal: true,
-            withTextField: true,
-            onCreatedDateState: (val) {
-              pickerDateState = val;
-              pickerDateState!.addListener(pickerListener);
-            },
-            onCloseModal: onClosePicker,
-            onKeyboadClose: onClosePicker,
-            headerWidget: null,
-            onTopActionBuilder: widget.onTopActionBuilder,
-            embeddedOptions: const EmbeddedOptions(),
-            boxConstraints: constraints,
-          ),
-        );
+    return GestureDetector(
+      onTapDown: (_) {
+        pickerFocusNode.requestFocus();
       },
-    ));
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          return Focus(
+            focusNode: pickerFocusNode,
+            child: SingleBoardDateTimeContent(
+              key: pickerController?.key,
+              pickerFocusNode: pickerFocusNode,
+              onChange: (val) {},
+              pickerType: widget.pickerType,
+              options: widget.options,
+              breakpoint: widget.breakpoint,
+              initialDate: selectedDate ?? DateTime.now(),
+              minimumDate: widget.minimumDate,
+              maximumDate: widget.maximumDate,
+              modal: true,
+              withTextField: true,
+              onCreatedDateState: (val) {
+                pickerDateState = val;
+                pickerDateState!.addListener(pickerListener);
+              },
+              onCloseModal: onClosePicker,
+              onKeyboadClose: onClosePicker,
+              headerWidget: null,
+              onTopActionBuilder: widget.onTopActionBuilder,
+              embeddedOptions: const EmbeddedOptions(),
+              boxConstraints: constraints,
+            ),
+          );
+        },
+      ),
+    );
   }
 
   /// Display small Picker when have focus
@@ -1107,10 +1104,7 @@ class _BoardDateTimeInputFieldState<T extends BoardDateTimeCommonResult>
             clipBehavior: Clip.antiAlias,
             child: Container(
               width: width,
-              constraints: const BoxConstraints(
-                minHeight: 240,
-                maxHeight: 480,
-              ),
+              constraints: const BoxConstraints(minHeight: 240, maxHeight: 480),
               child: _pickerWidget(),
             ),
           ),
