@@ -482,7 +482,12 @@ class _BoardDateTimeInputFieldState<T extends BoardDateTimeCommonResult>
         pickerFormat = options.pickerFormat;
         break;
       case DateTimePickerType.datetime:
-        pickerFormat = '${options.pickerFormat}Hm';
+        if (options.withSecond) {
+          pickerFormat = '${options.pickerFormat}Hms';
+          withSecond = true;
+        } else {
+          pickerFormat = '${options.pickerFormat}Hm';
+        }
         break;
       case DateTimePickerType.time:
         if (options.withSecond) {
@@ -645,7 +650,7 @@ class _BoardDateTimeInputFieldState<T extends BoardDateTimeCommonResult>
         inputFormatters: [
           LengthLimitingTextInputFormatter(format.length),
           FilteringTextInputFormatter.allow(RegExp(r'[0-9/;:,\-\s\.]')),
-          ...?additionalInputFormatters,
+          ...?widget.additionalInputFormatters,
         ],
         onTap: () {
           FocusScope.of(context).addListener(_focusScopeListener);
@@ -942,27 +947,39 @@ class _BoardDateTimeInputFieldState<T extends BoardDateTimeCommonResult>
     // If out of focus, correct as needed
     // Only time correction is performed since the date is corrected for the date
     if (complete && widget.pickerType == DateTimePickerType.datetime) {
-      if (result.splited!.length <= 5) {
-        final diff =
-            5 -
-            (result.splited!.where((e) => e.text.isNotEmpty).toList().length);
-        for (var i = 0; i < diff; i++) {
-          TextBloc bloc;
-          if (i == diff - 1) {
-            bloc = TextBloc(text: '00', start: 0, end: 0);
-            bloc.dateType = DateType.minute;
-          } else {
-            bloc = TextBloc(text: '00', start: 0, end: 0);
-            bloc.dateType = DateType.hour;
-          }
-          final index = result.splited!.indexWhere(
-            (e) => e.dateType == bloc.dateType,
-          );
-          if (index < 0) {
-            result.splited!.add(bloc);
-          } else {
-            result.splited![index] = bloc;
-          }
+      // Helper to add or update a time field
+      void ensureTimeField(DateType type, String defaultValue) {
+        final existing = result.splited!.firstWhereOrNull(
+          (e) => e.dateType == type,
+        );
+        final bloc = TextBloc(text: defaultValue, start: 0, end: 0)
+          ..dateType = type;
+        if (existing != null) {
+          final index = result.splited!.indexOf(existing);
+          result.splited![index] = bloc;
+        } else {
+          result.splited!.add(bloc);
+        }
+      }
+
+      // Проверяем, есть ли заполненные часы
+      final hasHour = result.splited!.any(
+        (e) => e.dateType == DateType.hour && e.text.isNotEmpty,
+      );
+
+      if (hasHour) {
+        // Авто-заполняем минуты, если их нет
+        if (!result.splited!.any(
+          (e) => e.dateType == DateType.minute && e.text.isNotEmpty,
+        )) {
+          ensureTimeField(DateType.minute, '00');
+        }
+        // Авто-заполняем секунды, если включена опция и их нет
+        if (options.withSecond &&
+            !result.splited!.any(
+              (e) => e.dateType == DateType.second && e.text.isNotEmpty,
+            )) {
+          ensureTimeField(DateType.second, '00');
         }
       }
     }

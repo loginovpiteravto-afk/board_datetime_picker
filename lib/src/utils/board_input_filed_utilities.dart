@@ -1,6 +1,7 @@
 import 'package:collection/collection.dart';
 
 import '../board_datetime_options.dart';
+
 import 'board_enum.dart';
 
 enum BoardDateTimeInputError { illegal, outOfRange }
@@ -41,9 +42,7 @@ class ValidatorResult {
       );
 
       final second = withSecond
-          ? splited?.firstWhereOrNull(
-              (e) => e.dateType == DateType.second,
-            )
+          ? splited?.firstWhereOrNull((e) => e.dateType == DateType.second)
           : null;
 
       return DateTime(
@@ -56,21 +55,19 @@ class ValidatorResult {
       );
     }
 
-    final year = splited?.firstWhereOrNull(
-      (e) => e.dateType == DateType.year,
-    );
+    final year = splited?.firstWhereOrNull((e) => e.dateType == DateType.year);
     final month = splited?.firstWhereOrNull(
       (e) => e.dateType == DateType.month,
     );
-    final day = splited?.firstWhereOrNull(
-      (e) => e.dateType == DateType.day,
-    );
-    final hour = splited?.firstWhereOrNull(
-      (e) => e.dateType == DateType.hour,
-    );
+    final day = splited?.firstWhereOrNull((e) => e.dateType == DateType.day);
+    final hour = splited?.firstWhereOrNull((e) => e.dateType == DateType.hour);
     final minute = splited?.firstWhereOrNull(
       (e) => e.dateType == DateType.minute,
     );
+    final second = withSecond
+        ? splited?.firstWhereOrNull((e) => e.dateType == DateType.second)
+        : null;
+
     if (year == null ||
         month == null ||
         year.text.isEmpty ||
@@ -83,6 +80,7 @@ class ValidatorResult {
       day == null || day.text.isEmpty ? 1 : int.parse(day.text),
       hour == null || hour.text.isEmpty ? 0 : int.parse(hour.text),
       minute == null || minute.text.isEmpty ? 0 : int.parse(minute.text),
+      second == null || second.text.isEmpty ? 0 : int.parse(second.text),
     );
   }
 }
@@ -93,11 +91,7 @@ class TextBloc {
   final int end;
   DateType? dateType;
 
-  TextBloc({
-    required this.text,
-    required this.start,
-    required this.end,
-  });
+  TextBloc({required this.text, required this.start, required this.end});
 }
 
 extension StringExtension on String {
@@ -145,6 +139,8 @@ extension StringExtension on String {
         return 'dd${delimiter}MM${delimiter}yyyy';
       case '${PickerFormat.dmy}Hm':
         return 'dd${delimiter}MM${delimiter}yyyy HH:mm';
+      case '${PickerFormat.dmy}Hms':
+        return 'dd${delimiter}MM${delimiter}yyyy HH:mm${withSecond ? ':ss' : ''}';
       case PickerFormat.ymd:
         return 'yyyy${delimiter}MM${delimiter}dd';
       case '${PickerFormat.ymd}Hm':
